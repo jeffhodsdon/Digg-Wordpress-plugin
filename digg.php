@@ -92,9 +92,9 @@ function digg_button_options() {
                 <td>
                     <fieldset>
                         <select name="digg_setting_button_type">
-                            <option value="normal" <?php _digg_selected('button_type', 'normal'); ?>>Normal</option>
+                            <option value="medium" <?php _digg_selected('button_type', 'medium'); ?>>Medium</option>
                             <option value="compact" <?php _digg_selected('button_type','compact'); ?>>Compact</option>
-                            <option value="icon" <?php _digg_selected('button_type', 'icon'); ?>>Icon</option>
+                            <option value="large" <?php _digg_selected('button_type', 'large'); ?>>Large</option>
                         </select>
                     </fieldset>
                 </td>
@@ -167,48 +167,40 @@ function digg_button_options() {
 }
 
 function digg_widget_options() {
+    $base = get_option('siteurl') . "/wp-content/plugins/digg/";
+    if (isset($_GET['updated'])) {
 ?>
-        <div class="wrap">
-        <div class="icon32" id="icon-options-general"><br/></div><h2>Digg plugin settings: widget</h2>
-        <?php if (isset($_GET['updated'])) { echo '<div id="message" class="updated fade"><p><strong>Settings saved.</strong></p></div>'; } ?>
-        <p>This is the settings page for the Digg widget.</p>
-        <form method="post" action="options.php">
-<?php
-    if(function_exists('settings_fields')){
-        settings_fields('digg-settings');
-    } else {
-        wp_nonce_field('update-options');
-?>
-            <input type="hidden" name="action" value="update" />
-            <input type="hidden" name="page_options" value="digg_setting_widget_enabled" />
-<?php 
-    }
-?>
-        <table class="form-table">
-            <tr>
-                <th scope="row">Display</th>
-                <td>
-                    <p>
-                        <input type="checkbox" value="1" <?php if (get_option('digg_setting_widget_enabled')) echo 'checked="checked"'; ?> name="digg_setting_widget_enabled" id="digg_setting_widget_enabled"/>
-                        <label for="digg_setting_widget_enabled">Enable the Digg widget</label>
-                    </p>
-                </td>
-            </tr>
-            <tr>
-                <th scope="row">Widget code</th>
-                <td>
-                    <p>
-                        <textarea cols="70" rows="25" class="codepress php" name="digg_setting_widget_snippet" id="digg_setting_widget_snippet"><?php echo get_option('digg_setting_widget_snippet'); ?></textarea>
-                    </p>
-                </td>
-            </tr>
-        </table>
-        <p class="submit">
-            <input type="submit" name="Submit" value="<?php _e('Save Changes') ?>" />
-        </p>
-        </form>
+        <div id="message" style="height: 302px; background: #fff url(<?php echo $base; ?>img/now.gif) no-repeat" class="updated fade">
+        </div>
+        <div>
+            <p><a href="?page=digg.php?widget"><< Back to creating a widget</a>
         </div>
 <?php
+    } else {
+?>
+<script type="text/javascript">
+    var _digg_root = "<?php echo $base; ?>";
+    var _digg_img_path = "<?php echo $base; ?>img/";
+</script>
+
+<link rel="stylesheet" href="<?php echo $base; ?>widget/diggwidget.css" />
+<script src="<?php echo $base; ?>jquery-1.4.1.min.js" type="text/javascript"></script>
+<script src="<?php echo $base; ?>widget/diggwidget.js" type="text/javascript"></script>
+<script src="<?php echo $base; ?>widget_generator.js" type="text/javascript"></script>
+
+<form method="post" action="options.php">
+<?php
+    settings_fields('digg-settings');
+?>
+    <input type="hidden" id="widget-code" value='<?php echo get_option('digg_setting_widget_snippet'); ?>' name="digg_setting_widget_snippet" />
+
+    <p class="submit">
+        <input type="submit" name="Submit" value="<?php _e('Save Changes') ?>" />
+    </p>
+</form>
+
+<?php
+    }
 }
 
 function digg_fetch_button() {
@@ -239,8 +231,13 @@ function digg_fetch_button() {
     }
     $style .= ' ' . _digg_option('button_style');
 
+    $class = '';
+    if (_digg_option('button_type') == 'medium') {
+        $class = ' DiggThisButtonMedium';
+    }
+
     $button .= '<div class="digg_button" style="' . $style . '">';
-    $button .= '<a class="DiggThisButton" href="http://digg.com/submit?url=' . $url . '&title=' . urlencode($post->post_title) . '" rel="external" rev=", ' . _digg_option('button_topic') . '">';
+    $button .= '<a class="DiggThisButton' . $class . '" href="' . $url . '" rel="external" rev=", ' . _digg_option('button_topic') . '">';
     $button .= '<span style="display: none;">';
     if (empty($post->post_excerpt)) {
         # Take off the last word, Jeff style!
@@ -254,10 +251,10 @@ function digg_fetch_button() {
 
     switch (_digg_option('button_type')) {
         case 'normal':
-            $button .= '<img src="http://digg.com/img/diggThis.png" height="80" width="52"  alt="DiggThis" />';
+            $button .= '';
             break;
         case 'compact':
-            $button .= '<img src="http://digg.com/img/diggThisCompact.png" height="18" width="120" alt="DiggThis" />';
+            $button .= '<img src="http://widgets.digg.com/img/button/diggThisCompact.png" alt="DiggThis" />';
             break;
         case 'icon':
             $button .= '<img src="http://digg.com/img/diggThisIcon.gif" height="16" width="16"  alt="DiggThis" />';
@@ -267,10 +264,18 @@ function digg_fetch_button() {
     }
 
     $button .= '</a>';
-    $button .= '<script src="http://digg.com/tools/diggthis.js" type="text/javascript"></script>';
     $button .= '</div>';
 
     return $button;
+}
+
+function add_digg_button_script()
+{
+    if (!get_option('digg_setting_button_enabled')) {
+        return;
+    }
+
+    echo '<script src="http://widgets.digg.com/buttons.js" type="text/javascript"></script>';
 }
 
 function add_digg_button_to_a_post($post)
@@ -286,11 +291,11 @@ function add_digg_button_to_a_post($post)
 }
 
 function digg_widget() {
-    echo get_option('digg_setting_widget_snippet');
+    echo htmlspecialchars_decode(get_option('digg_setting_widget_snippet'));
 }
 
 function digg_widget_setup() {
-    register_sidebar_widget('Digg widget', 'digg_widget');
+    register_sidebar_widget('The Digg widget', 'digg_widget');
 }
 
 function digg_activate() {
@@ -333,6 +338,7 @@ if(is_admin()){
 }
 
 add_filter('the_content', 'add_digg_button_to_a_post');
+add_filter('get_footer', 'add_digg_button_script');
 add_action('widgets_init','digg_widget_setup');
 
 register_activation_hook( __FILE__, 'digg_activate');
