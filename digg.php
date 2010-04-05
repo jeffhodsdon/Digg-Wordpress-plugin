@@ -16,8 +16,13 @@ function digg_admin_menus() {
                      basename(__FILE__) . '?widget', 'digg_widget_options');
 }
 
-function _digg_option($option) {
-    return get_option('digg_setting_' . $option);
+function _digg_option($option, $default = null) {
+    $res = get_option('digg_setting_' . $option);
+    if ($res == '' && $default !== null) {
+        return $default;
+    }
+
+    return $res;
 }
 
 function _digg_checked($option, $value) {
@@ -827,7 +832,7 @@ Number of Items
 <script type="text/javascript" language="JavaScript" src="<?php echo $base; ?>widget-generator.js"></script>
 <script type="text/javascript">
 (function() {
-    var myGenerator = new DiggWidgetGenerator(<?php echo get_option('digg_setting_widget_json'); ?>, function() {
+    var myGenerator = new DiggWidgetGenerator(<?php echo _digg_option('widget_json', 'null'); ?>, function() {
         $('input[name=digg_setting_widget_html]').val(myGenerator.getCode());
         $('input[name=digg_setting_widget_json]').val(myGenerator.getWidget());
     });    
